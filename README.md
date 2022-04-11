@@ -22,24 +22,9 @@ The following libraries are required to achieve the code followed in the main se
 #include <Servo.h>
 ```
 
-The following code is where recipes would be stored and dispensed:
+The following code includes the main setup of global variables, setup function, loop function, and onMsgChange function:
 
 ```c++
-//Set digital pins connected to the ultrasonic sensor
-#define US_TRIG_PIN 4
-#define US_ECHO_PIN 2
-
-//Initialize servos
-Servo vodka;
-Servo clubSoda;
-Servo orange;
-Servo cran;
-
-//Global variables used throughout the code for servo position, loop logic, cup distance & delays
-int pos = 0;
-int step = 0;
-long dist = 7.00;
-
 unsigned long previousMillis = 0;
 unsigned long previousMillisB = 0;
 const long interval = 2000;
@@ -197,6 +182,7 @@ void onMsgChange()  {
   }
 }
 ```
+The code includes various methods of delays (delay functions for smoother servo monitoring and utilization of the millis() library for time delays for each drink).
 
 When a user inputs their desired drink - the following message will display in the dashboard:
 
