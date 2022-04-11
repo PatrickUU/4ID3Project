@@ -18,13 +18,168 @@ The idea of the project is to simplify the usage process of creating mixed cockt
 The following libraries are required to achieve the code followed in the main section:
 
 ```c++
-**INSERT CODE INSERTS HERE***
+#include "thingProperties.h"
+#include <Servo.h>
 ```
 
 The following code is where recipes would be stored and dispensed:
 
 ```c++
-**INSERT CODE HERE PLESAEAEAEWESESE*
+#define US_TRIG_PIN 4
+#define US_ECHO_PIN 2
+
+
+Servo vodka;
+Servo clubSoda;
+Servo orange;
+Servo cran;
+int pos = 0;
+int step = 0;
+long dist = 7.00;
+
+unsigned long previousMillis = 0;
+unsigned long previousMillisB = 0;
+const long interval = 2000;
+const long intervalMix = 3500;
+
+void setup() {
+  Serial.begin(9600);
+  delay(1500);
+
+  vodka.attach(15);
+  clubSoda.attach(16);
+  orange.attach(17);
+  cran.attach(18);
+
+  vodka.write(pos);
+  clubSoda.write(pos);
+  orange.write(pos);
+  cran.write(pos);
+  
+  pinMode(US_TRIG_PIN, OUTPUT);
+  pinMode(US_ECHO_PIN, INPUT);
+  
+  initProperties();
+  ArduinoCloud.begin(ArduinoIoTPreferredConnection);
+  setDebugMessageLevel(2);
+  ArduinoCloud.printDebugInfo();
+
+}
+
+void loop() {
+  ArduinoCloud.update();
+  
+  long duration, Distance_Sensor;
+  digitalWrite(US_TRIG_PIN,LOW);
+  delayMicroseconds(2);
+  
+  digitalWrite(US_TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  
+  digitalWrite(US_TRIG_PIN,LOW);
+  duration = pulseIn(US_ECHO_PIN,HIGH);
+  
+  cup = (duration/2)/29.1;
+  Serial.println(duration);
+  Serial.println(cup);
+  
+  if(msg=="Drink is made"){
+    step=0;
+    onMsgChange();
+  }
+
+  unsigned long currentMillis = millis();
+  if ((msg == "VS" || msg=="VO" || msg=="VC" || msg=="V")&& cup<=dist) {
+    if (step == 0) // Open Vodka
+    {
+      for (pos = 0; pos <= 70; pos += 1) {
+        vodka.write(pos);
+        delay(1);
+        if (pos == 70) {
+          previousMillis = currentMillis;
+          step = 1;
+        }
+      }
+    }
+    if (step == 1 && (currentMillis - previousMillis >= interval)) { // Close Vodka
+      for (pos = 70; pos >= 0; pos -= 1) {
+        vodka.write(pos);
+        delay(1);
+        if (pos == 0) {
+          step = 2;
+          if(msg=="V"){
+            step=4;
+            msg="Drink is made";
+          }
+        }
+      }
+    }
+    
+    unsigned long currentMillisB = millis();
+    if (step == 2) { //Open Soda
+      for (pos = 0; pos <= 70; pos += 1) {
+        if(msg=="VS"){
+          clubSoda.write(pos);
+          delay(1);
+          if (pos == 70) {
+            previousMillisB = currentMillisB;
+            step = 3;
+          }
+        }
+        else if(msg=="VO"){
+          orange.write(pos);
+          delay(1);
+          if (pos == 70) {
+            previousMillisB = currentMillisB;
+            step = 3;
+          }
+        }
+        else if(msg=="VC"){
+          cran.write(pos);
+          delay(1);
+          if (pos == 70) {
+            previousMillisB = currentMillisB;
+            step = 3;
+          }
+        }
+      }
+    }
+    if (step == 3 && (currentMillisB - previousMillisB >= intervalMix)) {
+      for (pos = 70; pos >= 0; pos -= 1) {
+        if(msg=="VS"){
+          clubSoda.write(pos);
+          delay(1);
+          if (pos == 0) {
+            step = 4;
+            msg = "Drink is made";
+          }
+        }
+        else if(msg=="VO"){
+          orange.write(pos);
+          delay(1);
+          if (pos == 0) {
+            step = 4;
+            msg = "Drink is made";
+          }
+        }
+        else if(msg=="VC"){
+          cran.write(pos);
+          delay(1);
+          if (pos == 0) {
+            step = 4;
+            msg = "Drink is made";
+          }
+        }
+      }
+    }
+  }
+}
+
+void onMsgChange()  {
+  if(msg=="start" || msg== "Drink is made"){
+    msg="Vodka Orange = VO --------------- Vodka Cran = VC ------------------ Vodka Soda = VS ------------------ Vodka Shot = V ---------------- ";
+  }
+}
 ```
 
 When a user inputs their desired drink - the following message will display in the dashboard:
