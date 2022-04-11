@@ -25,14 +25,17 @@ The following libraries are required to achieve the code followed in the main se
 The following code is where recipes would be stored and dispensed:
 
 ```c++
+//Set digital pins connected to the ultrasonic sensor
 #define US_TRIG_PIN 4
 #define US_ECHO_PIN 2
 
-
+//Initialize servos
 Servo vodka;
 Servo clubSoda;
 Servo orange;
 Servo cran;
+
+//Global variables used throughout the code for servo position, loop logic, cup distance & delays
 int pos = 0;
 int step = 0;
 long dist = 7.00;
@@ -42,23 +45,28 @@ unsigned long previousMillisB = 0;
 const long interval = 2000;
 const long intervalMix = 3500;
 
+//setup
 void setup() {
   Serial.begin(9600);
   delay(1500);
-
+  
+  //set pins to servos
   vodka.attach(15);
   clubSoda.attach(16);
   orange.attach(17);
   cran.attach(18);
-
+  
+  //write initial start position to servos
   vodka.write(pos);
   clubSoda.write(pos);
   orange.write(pos);
   cran.write(pos);
   
+  //Set pinMode of the Ultrasonic Sensor
   pinMode(US_TRIG_PIN, OUTPUT);
   pinMode(US_ECHO_PIN, INPUT);
   
+  //Pre given from IoT Cloud Platform
   initProperties();
   ArduinoCloud.begin(ArduinoIoTPreferredConnection);
   setDebugMessageLevel(2);
@@ -66,9 +74,11 @@ void setup() {
 
 }
 
+//main loop
 void loop() {
   ArduinoCloud.update();
   
+  //Ultrasonic sensor calculation
   long duration, Distance_Sensor;
   digitalWrite(US_TRIG_PIN,LOW);
   delayMicroseconds(2);
@@ -78,16 +88,19 @@ void loop() {
   
   digitalWrite(US_TRIG_PIN,LOW);
   duration = pulseIn(US_ECHO_PIN,HIGH);
-  
   cup = (duration/2)/29.1;
+  
+  //for debugging
   Serial.println(duration);
   Serial.println(cup);
   
+  //go back to step 0 once drink is finished
   if(msg=="Drink is made"){
     step=0;
     onMsgChange();
   }
-
+  
+  //Open "alcohol" valve
   unsigned long currentMillis = millis();
   if ((msg == "VS" || msg=="VO" || msg=="VC" || msg=="V")&& cup<=dist) {
     if (step == 0) // Open Vodka
@@ -115,6 +128,7 @@ void loop() {
       }
     }
     
+    //open selected "mix"
     unsigned long currentMillisB = millis();
     if (step == 2) { //Open Soda
       for (pos = 0; pos <= 70; pos += 1) {
@@ -175,7 +189,9 @@ void loop() {
   }
 }
 
+//created by IoT cloud platform
 void onMsgChange()  {
+  //menu message output
   if(msg=="start" || msg== "Drink is made"){
     msg="Vodka Orange = VO --------------- Vodka Cran = VC ------------------ Vodka Soda = VS ------------------ Vodka Shot = V ---------------- ";
   }
@@ -185,7 +201,7 @@ void onMsgChange()  {
 When a user inputs their desired drink - the following message will display in the dashboard:
 
 ```c++
- "Your drink is ready!"
+ "Drink is made"
 ```
 
 After this message, the user can then chose another drink to dispense only when a cup is present at the dispense tube.
